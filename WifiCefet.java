@@ -3,14 +3,14 @@
 * ajustando os parâmetros necessários para o correto funcionamento
 * <p>
 * Para compilar basta executar:
-* javac WifiCefet.java
+* javac -encoding utf-8 WifiCefet.java
 *
 * Para empacotar:
 * jar cfvm WifiCefet.jar META-INF/MANIFEST.MF WifiCefet.class
 * </p>
 *
 * @author      Rômulo Mendes Figueiredo <romulo.figueiredo@cefet-rj.br>
-* @version     1.2018.03.14.1540
+* @version     2018.03.22.1829
 */
 
 import java.io.*;
@@ -19,12 +19,11 @@ import java.util.Scanner;
 
 public class WifiCefet {
 
-  public static String wifi;
   public static String xml;
 
   public static String titulo = "Rede WiFi CEFET/RJ";
 	private static String OS = System.getProperty("os.name").toLowerCase();
-  public static String versao = "1.2018.03.14.1540";
+  public static String versao = "2018.03.22.1829";
 
   public static boolean isWindows() {
 		return (OS.indexOf("win") >= 0);
@@ -47,19 +46,26 @@ public class WifiCefet {
 
       System.out.println("\nExecutar comando:\n" + comando + '\n');
       Process p = Runtime.getRuntime().exec(comando);
-      p.waitFor();
+      int returnCode = p.waitFor();
 
       BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
       String line = "";
+      String saida = "";
 
       while ((line = reader.readLine())!= null) {
+          saida += line;
           System.out.println(line + "\n");
-        }
+      }
+
+      if ( returnCode != 0 && !( returnCode == 10 && isUnix() ) ) {
+        JOptionPane.showMessageDialog(null, "Não foi possível criar a rede Wi-Fi\n\n" + saida + "\n\nErro número: " + returnCode + "\n\nComando executado: \n" + comando.substring(0,40) + "...\n\n", titulo + " versão " + versao, JOptionPane.ERROR_MESSAGE);
+        System.exit(1);
+      }
 
     } catch(Exception e) {
       ////throw new Exception(e.getMessage());
       System.out.println(e.getMessage());
-      JOptionPane.showMessageDialog(null, e.getMessage(), titulo, JOptionPane.ERROR_MESSAGE);
+      JOptionPane.showMessageDialog(null, e.getMessage(), titulo + " versão " + versao, JOptionPane.ERROR_MESSAGE);
       System.exit(1);
     }
   }
@@ -67,42 +73,6 @@ public class WifiCefet {
   public static void loadStrings() {
 
     xml = "<?xml version='1.0'?><WLANProfile xmlns='http://www.microsoft.com/networking/WLAN/profile/v1'><name>FREERADIUS</name><SSIDConfig><SSID><hex>46524545524144495553</hex><name>FREERADIUS</name></SSID><nonBroadcast>false</nonBroadcast></SSIDConfig><connectionType>ESS</connectionType><connectionMode>auto</connectionMode><autoSwitch>false</autoSwitch><MSM><security><authEncryption><authentication>WPA2</authentication><encryption>AES</encryption><useOneX>true</useOneX><FIPSMode xmlns='http://www.microsoft.com/networking/WLAN/profile/v2'>false</FIPSMode></authEncryption><PMKCacheMode>enabled</PMKCacheMode><PMKCacheTTL>720</PMKCacheTTL><PMKCacheSize>128</PMKCacheSize><preAuthMode>disabled</preAuthMode><OneX xmlns='http://www.microsoft.com/networking/OneX/v1'><cacheUserData>true</cacheUserData><authMode>user</authMode><EAPConfig><EapHostConfig xmlns='http://www.microsoft.com/provisioning/EapHostConfig'><EapMethod><Type xmlns='http://www.microsoft.com/provisioning/EapCommon'>25</Type><VendorId xmlns='http://www.microsoft.com/provisioning/EapCommon'>0</VendorId><VendorType xmlns='http://www.microsoft.com/provisioning/EapCommon'>0</VendorType><AuthorId xmlns='http://www.microsoft.com/provisioning/EapCommon'>0</AuthorId></EapMethod><Config xmlns='http://www.microsoft.com/provisioning/EapHostConfig'><Eap xmlns='http://www.microsoft.com/provisioning/BaseEapConnectionPropertiesV1'><Type>25</Type><EapType xmlns='http://www.microsoft.com/provisioning/MsPeapConnectionPropertiesV1'><ServerValidation><DisableUserPromptForServerValidation>false</DisableUserPromptForServerValidation><ServerNames></ServerNames></ServerValidation><FastReconnect>true</FastReconnect><InnerEapOptional>false</InnerEapOptional><Eap xmlns='http://www.microsoft.com/provisioning/BaseEapConnectionPropertiesV1'><Type>26</Type><EapType xmlns='http://www.microsoft.com/provisioning/MsChapV2ConnectionPropertiesV1'><UseWinLogonCredentials>false</UseWinLogonCredentials></EapType></Eap><EnableQuarantineChecks>false</EnableQuarantineChecks><RequireCryptoBinding>false</RequireCryptoBinding><PeapExtensions><PerformServerValidation xmlns='http://www.microsoft.com/provisioning/MsPeapConnectionPropertiesV2'>false</PerformServerValidation><AcceptServerName xmlns='http://www.microsoft.com/provisioning/MsPeapConnectionPropertiesV2'>false</AcceptServerName></PeapExtensions></EapType></Eap></Config></EapHostConfig></EAPConfig></OneX></security></MSM></WLANProfile>";
-
-    //nmcli connection add type wifi ifname '*' ssid 'FREERADIUS' mode infrastructure -- wifi-sec.key-mgmt wpa-eap 802-1x.eap peap 802-1x.identity username 802-1x.phase2-auth mschapv2 ipv4.method auto wifi.mtu auto ipv6.method ignore
-    wifi = "[connection]";
-    wifi += "id=FREERADIUS";
-    wifi += "type=802-11-wireless";
-    wifi += "permissions=";
-    wifi += "secondaries=";
-
-    wifi += "[wifi]";
-    wifi += "mac-address-blacklist=";
-    wifi += "mac-address-randomization=0";
-    wifi += "mode=infrastructure";
-    wifi += "seen-bssids=";
-    wifi += "ssid=FREERADIUS";
-
-    wifi += "[wifi-security]";
-    wifi += "group=";
-    wifi += "key-mgmt=wpa-eap";
-    wifi += "pairwise=";
-    wifi += "proto=";
-
-    wifi +="[802-1x]";
-    wifi += "altsubject-matches=";
-    wifi += "eap=peap;";
-    wifi += "identity=$_IDENTITY";
-    wifi += "phase2-altsubject-matches=";
-    wifi += "phase2-auth=mschapv2";
-
-    wifi += "[ipv4]";
-    wifi += "dns-search=";
-    wifi += "method=auto";
-
-    wifi += "[ipv6]";
-    wifi += "addr-gen-mode=stable-privacy";
-    wifi += "dns-search=";
-    wifi += "method=ignore";
 
   }
 
@@ -137,7 +107,7 @@ public class WifiCefet {
           throw new Exception("Cancelado pelo usuário.");
         };
 
-        exec("nmcli connections delelele delete FREERADIUS");
+        exec("nmcli connection delete FREERADIUS");
 
         comando = "nmcli connection add type 802-11-wireless con-name FREERADIUS ifname * ssid FREERADIUS mode infrastructure ";
         comando += "-- wifi-sec.key-mgmt wpa-eap 802-1x.eap peap 802-1x.identity " + username + " 802-1x.password " + password + " 802-1x.phase2-auth mschapv2 ipv4.method auto wifi.mtu auto ipv6.method ignore";
@@ -159,13 +129,14 @@ public class WifiCefet {
       } else {
         System.out.println("Erro: sistema operacional não detectado.");
         JOptionPane.showMessageDialog(null, "Sistema operacional não detectado ou não compatível.", titulo, JOptionPane.ERROR_MESSAGE);
-        throw new Exception("SO_NAO_DETECTADO");
+        throw new Exception("Sistema operacional não detectado!");
       };
 
-      JOptionPane.showMessageDialog(null, "Rede Wi-Fi criada com sucesso!\nPode ser necessário reiniciar a máquina.");
+      JOptionPane.showMessageDialog(null, "Rede Wi-Fi criada com sucesso!\nPode ser necessário reiniciar a máquina.", titulo + " versão " + versao, JOptionPane.INFORMATION_MESSAGE);
 
     } catch (Exception e) {
       System.out.println("erro.....");
+      JOptionPane.showMessageDialog(null, e.getMessage(), titulo + " versão " + versao, JOptionPane.ERROR_MESSAGE);
       e.printStackTrace();
     }
   }
